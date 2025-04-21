@@ -1,0 +1,210 @@
+---
+title: "SDS 315 HW 9"
+author: "Andrew Wei"
+date: "2025-04-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# SDS 315 - Homework 9
+
+Name: Andrew Wei
+
+EID: aw42559
+
+GitHub Repository: 
+
+```{r include=FALSE}
+
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+library(moderndive)
+library(dbplyr)
+library(effectsize)
+
+solder <- read.csv('solder.csv')
+groceries <- read.csv('groceries.csv')
+
+```
+
+# Problem 1: Manufacturing Flaws in Circuit Boards
+
+## Part A:
+
+```{r echo=FALSE}
+
+ggplot(solder) + 
+  geom_jitter(aes(x = skips, y = Opening), width=0.1) + 
+  stat_summary(aes(x = skips, y = Opening), fun='mean', color='red', size=1) + labs(title="Number of Skips based on Opening Size", x="Number of Skips", y="Opening Size")
+
+mean(skips ~ Opening, data=solder)
+
+```
+
+This plot shows a jitter plot with the Opening Size of a Solder Gun (S, M, L) in relationship with the number of solder skips on the circuit board. The mean number of skips for each size is also displayed - "Large - 1.53 skips, Medium - 3.57 skips, Small - 11.49 skips"
+
+```{r echo=FALSE}
+
+ggplot(solder) + 
+  geom_jitter(aes(x = skips, y = Solder), width=0.1) + 
+  stat_summary(aes(x = skips, y = Solder), fun='mean', color='red', size=1) + labs(title="Number of Skips based on Thickness", x="Number of Skips", y="Thickness")
+
+mean(skips ~ Solder, data=solder)
+
+```
+
+This plot shows a jitter plot with the Thickness of Alloy in relationship with the number of solder skips on the circuit board. The mean number of skips for each thickness is also displayed - "Thin - 2.90 skips, Thick - 8.16 skips"
+
+## Part B: 
+
+```{r echo=FALSE}
+
+lm_solder = lm(skips ~ Solder + Opening + Solder:Opening, data=solder)
+
+get_regression_table(lm_solder, conf.level = 0.95, digits=3)
+
+coef(lm_solder)
+
+```
+
+The table is displayed above. Here is the equation using the *estimates:*
+
+**(Number of Skips) = 0.393 + 2.280(Thin Alloy) + 2.407(Medium Opening) + 5.127(Small Opening) - 0.740(Thin Solder & Medium Opening) + 9.653(Thin Solder & Small Opening)**
+
+The thick alloy and large opening are served as references. 
+
+## Part C: 
+
+Interpret each coefficient in your model: 
+
+1) 0.393 - the **baseline** number of skips that are neither thin nor (small or medium). This would be the expected number of skips for using a thick alloy material and large opening.
+2) 2.280 - the main effect for the thin alloy material (using think alloy material will raise the expected number of skips by 2.280)
+3) 2.407 - the main effect for the medium gun opening (using a medium opening will raise the expected number of skips by 2.407)
+4) 5.127 - the main effect for the small gun opening (using a small opening will raise the expected number of skips by 5.127)
+5) -0.740 - the interaction effect for using both thin alloy material and medium gun opening
+6) 9.653 - the interaction effect for using both thin alloy material and small gun opening
+
+## Part D:
+
+As a reminder, here is our **Multiple Regression Equation** - (Number of Skips) = 0.393 + 2.280(Thin Alloy) + 2.407(Medium Opening) + 5.127(Small Opening) - 0.740(Thin Solder & Medium Opening) + 9.653(Thin Solder & Small Opening)
+
+Our goal for this question is to **minimize** the number of skips - let's take a look at our scenarios. Our Multiple Regression Equation has the following variables - (1) Thin Alloy, (2) Medium Opening, (3) Small Opening, (4) Interaction between Thin Alloy and Medium Opening, (5) Interaction between Thin Alloy and Small Opening. We also notice that all scenarios presented in our equation will **raise** the expected number of skips (-0.740 coefficient is not enough to "cancel" the mandatory corresponding positive coefficients (Thin and Medium)). Thus, the scenario that would lead to the **least** number of skips is our **baseline scenario,** which is using **Thick Alloy Material and Large Opening,** which is the combination that I would recommend. 
+
+# Problem 2: Grocery Store Prices
+
+## Part A: 
+
+```{r echo=FALSE}
+
+grocery_summary = groceries %>%
+  group_by(Store) %>%
+  summarize(mean_price = mean(Price))
+  
+ggplot(grocery_summary) + 
+  geom_col(aes(x=factor(Store), y=mean_price)) + coord_flip() + labs(title="Average Price at Different Stores", x="Store", y="Mean Price ($)")
+
+```
+
+The following horizontal bar graph displays the mean price of all products sold at a particular store. Based on the data given, Whole Foods seems to have the highest average price while Fiesta seems to have the lowest average price. 
+
+## Part B:
+
+```{r echo=FALSE}
+
+products_summary = groceries %>%
+  group_by(Product) %>%
+  summarize(num_stores = n_distinct(Store))
+
+ggplot(products_summary) + 
+  geom_col(aes(x=factor(Product), y=num_stores)) + coord_flip() + labs(title="Number of Stores Offering Specific Product", x="Product Name", y="Number of Stores")
+
+```
+
+This next horizontal bar graph displays the number of stores selling the specific product (the products itself are a little hard to see). As one can see, some items, such as a Carton of Eggs, are much more universally sold than other items, such as Cinnamon Toast Crunch. 
+
+## Part C:
+
+```{r echo=FALSE}
+
+lm_store_type = lm(Price ~ Product + Type, data=groceries)
+
+get_regression_table(lm_store_type, conf.level = 0.95, digits=2)
+
+```
+
+Compared with ordinary grocery stores (like Albertsons, HEB, or Krogers), convenience stores charge somewhere between 0.41 and 0.92 dollars more for the same product. 
+
+## Part D:
+
+```{r echo=FALSE}
+
+lm_store = lm(Price ~ Product + Store, data=groceries)
+
+get_regression_table(lm_store, conf.level = 0.95, digits=2)
+
+```
+
+Based on our Regression Model when factoring in both the Products and the Stores, **Walmart and Kroger Fresh Fare** had the lowest prices when comparing the same product (the lowest coefficients). Kroger Fresh Fare's prices were lower by around 0.90 while Walmart's prices were lower by around 0.99. On the other hand, **Whole Foods and Wheatsville Food Co-Op** seemed to charge the highest prices when comparing the same product, with Wheatsville charging 0.29 more and Whole Foods charging 0.36 more on average. 
+
+## Part E: 
+
+For this question, where we are exploring the differences between Central Market and HEB, let's solely compare the coefficients of Central Market and HEB. Central Market has an estimate of **-0.57** and a 95% Confidence Interval of **[-0.92, -0.23].** On the other hand, HEB has an estimate of **-0.65** and a 95% Confidence Interval of **[-0.95, -0.35].** 
+
+Because we clearly see an overlap within the two confidence intervals, we can conclude that **Central Market charges a similar amount to HEB for the same product.** Similarly, the difference between Central Market and HEB is **-0.57 - (-0.65) = 0.08** - which is an 8 cents difference! There are some stores that deviate much more than this difference, so it is safe to conclude that there is essentially no difference between Central Market and HEB. 
+
+## Part F: 
+
+```{r echo=FALSE}
+
+groceries = groceries %>%
+  mutate(Income10K = round(Income / 10000))
+
+lm_income = lm(Price ~ Product + Income10K, data=groceries)
+
+get_regression_table(lm_income, conf.level = 0.95, digits=2)
+
+standardize_parameters(lm_income)
+
+```
+
+I have created a variable for incomes measured in multiples of $10,000, rounding everything to the **nearest whole number.** (For example, an income of 34,000 would have an "Income10K" value of 3). NOTE: Results may not be as accurate because of the decision to round to the nearest whole number. 
+
+(a) As an estimate, the coefficient for "Income10K" is -0.02 while its 95% Confidence Interval is [-0.03, 0.00]. Even though it appears evermore slightly that an increase in average income will *slightly decrease* the price of a specific product. However, because 0 is contained in the confidence interval, we are not *entirely confident* that being in a poorer community will make one pay more or less for the same product. Thus, although the estimate shows that they will pay *slightly more* for the same product, our findings are statistically insignificant. 
+
+(b) A one-standard deviation increase in the income of a ZIP code seems to be associated with a -0.04 standard-deviation change in the price that consumers in that ZIP code expect to pay for the same product.
+
+# Problem 3: Redlining
+
+## Part A: 
+
+The Statement: ZIP codes with a higher percentage of minority residents tend to have more FAIR policies per 100 housing units. 
+
+The Response: In order to answer this question, let's take a look at the information given in Figure A1. In the graph and regression model of FAIR policies vs. percentage minority, we see the following **estimated** Regression equation - **(FAIR Policies) = 0.151 + 0.014(% Minority)**. Taking a look at the (% Minority) confidence interval, our 95% Confidence Interval has the interval [0.009, 0.018] captured. Because 0 is not captured within this interval, we have **statistically significant** evidence that higher percentage of minority residents tends to lead to more FAIR units per 100 housing units. Thus, this statement is **TRUE.**
+
+## Part B: 
+
+The Statement: The evidence suggests an interaction effect between minority percentage and the age of the housing stock in the way that these two variables are related to the number of FAIR policies in a ZIP code.
+
+The Response: The only piece of evidence that we are given to answer this question is "model_B" - "lm(minority ~ age, data = redlining)." This model shows the relationship between the percentage of housing built before WWII, and the minority percentage, which has no relation with answering a question that discusses the **interaction effect** between minority percentage and age of housing stock. Thus, there is **no evidence** that suggests the following statement and the above statement is **FALSE.**
+
+## Part C:
+
+The Statement: The relationship between minority percentage and number of FAIR policies per 100 housing units is stronger in high-fire-risk ZIP codes than in low-fire-risk ZIP codes.
+
+The Response: This question asks for an *interaction* between minority percentage and whether an area is in a high-fire-risk ZIP code or not. Model_C gives us a perfect lookout - let's take a look at the coefficients to see whether the **interaction between minority and low fire risks** will have any significant effect on the number of FAIR policies. In this scenario, we have a estimate of -0.001 and a Confidence Interval of [-0.012, 0.01]. Because 0 is contained in the interval, our results are **statistically insignificant** and we cannot be confident whether the interaction between high-fire-risks or low-fire-risks are stronger. Thus, this statement is **FALSE.**
+
+## Part D: 
+
+The Statement: Even without controlling for any other variables, income "explains away" all the association between minority percentage and FAIR policy uptake.
+
+The Response: In order to answer this question, let's take a look at "model_D2", which adds income level as a controller along with minority percentage. Because the question is asking whether income "explains away" the association between minority percentage and FAIR policy uptake, let's take a look at the minority coefficient in our Regression Equation - **(FAIR Policies) = 1.08 + 0.01(% Minority) - 0.074(Median Income).** A 95% Confidence Interval for "% Minority" gives us [0.004, 0.015] - because our results are still **statistically significant** after controlling for median income, it is inaccurate to say that income "explains away" all association between minority percentage and FAIR policy uptake. Thus, this statement is **FALSE.**
+
+## Part E: 
+
+The Statement: Minority percentage and number of FAIR policies are still associated at the ZIP code level, even after controlling for income, fire risk, and housing age. 
+
+The Response: Let's take a look at the Multiple Linear Regression model (model_E). From this model, they controlled income, fire risk, and housing age, in order to the minority percentage. Now let's look at a 95% Confidence Interval for the "minority" factor - we have [0.003, 0.014]. Because 0 is not contained within this interval, our results are **statistically significant** and we can conclude that minority percentage and number of FAIR policies are still associated at the ZIP code level even after controlling other variables. Thus, this statement is **TRUE.**
