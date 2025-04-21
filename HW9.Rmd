@@ -85,8 +85,8 @@ Interpret each coefficient in your model:
 2) 2.280 - the main effect for the thin alloy material (using think alloy material will raise the expected number of skips by 2.280)
 3) 2.407 - the main effect for the medium gun opening (using a medium opening will raise the expected number of skips by 2.407)
 4) 5.127 - the main effect for the small gun opening (using a small opening will raise the expected number of skips by 5.127)
-5) -0.740 - the interaction effect for using both thin alloy material and medium gun opening
-6) 9.653 - the interaction effect for using both thin alloy material and small gun opening
+5) -0.740 - the interaction effect for using both thin alloy material and medium gun opening (using a thin alloy material and a medium gun opening will lower the expected number of skips by 0.740)
+6) 9.653 - the interaction effect for using both thin alloy material and small gun opening (using a thin alloy and a small gun opening will raise the expected number of skips by 9.653)
 
 ## Part D:
 
